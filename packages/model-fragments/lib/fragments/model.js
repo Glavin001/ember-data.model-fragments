@@ -114,6 +114,10 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
     console.log(key, type, serializer);
     console.log(this._data, data);
 
+    // Normalize Relationships
+    console.log(this._proto);
+    console.log('relationshipsByName', get(this, 'relationshipsByName'));
+
     // Initiate state change
     this.send('pushedData');
 
@@ -225,7 +229,70 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
   init: function() {
     this._super();
     this._setup();
-  }
+  },
+
+
+    /**
+      A map whose keys are the relationships of a model and whose values are
+      relationship descriptors.
+
+      For example, given a model with this
+      definition:
+
+      ```javascript
+      App.Blog = DS.Model.extend({
+        users: DS.hasMany('user'),
+        owner: DS.belongsTo('user'),
+
+        posts: DS.hasMany('post')
+      });
+      ```
+
+      This property would contain the following:
+
+      ```javascript
+      var relationshipsByName = Ember.get(App.Blog, 'relationshipsByName');
+      relationshipsByName.get('users');
+      //=> { key: 'users', kind: 'hasMany', type: App.User }
+      relationshipsByName.get('owner');
+      //=> { key: 'owner', kind: 'belongsTo', type: App.User }
+      ```
+
+      @property relationshipsByName
+      @static
+      @type Ember.Map
+      @readOnly
+    */
+    relationshipsByName: Ember.computed(function() {
+      console.log('relationshipsByName');
+
+      var map = Ember.Map.create(), type;
+      console.log(this.eachComputedProperty);
+
+      this.eachComputedProperty(function(name, meta) {
+          console.log('eachComputedProperty', name, meta);
+
+        if (meta.isRelationship) {
+          meta.key = name;
+          type = meta.type;
+
+          if (!type && meta.kind === 'hasMany') {
+            type = singularize(name);
+          } else if (!type) {
+            type = name;
+          }
+
+          if (typeof type === 'string') {
+            meta.type = this.store.modelFor(type);
+          }
+
+          map.set(name, meta);
+        }
+      });
+
+      return map;
+    })
+
 });
 
 export default ModelFragment;

@@ -30,7 +30,8 @@ var protoProps = [
   'eachAttribute',
   'fragmentDidDirty',
   'fragmentDidReset',
-  'rollbackFragments'
+  'rollbackFragments',
+  'proto'
 ].reduce(function(props, name) {
   props[name] = Model.prototype[name] || Ember.meta(Model.prototype).descs[name];
   return props;
@@ -52,7 +53,7 @@ var classProps = [
 
   @class CoreModel
 */
-var CoreModel = Ember.Object.extend(protoProps, {
+var CoreModel = Ember.Object.extend(Ember.CoreObject.PrototypeMixin, Ember.CoreObject.ClassMixin, protoProps, {
   eachRelationship: Ember.K,
   updateRecordArraysLater: Ember.K
 });
@@ -135,8 +136,7 @@ CoreModel.reopenClass(classProps, {
     });
 
     return map;
-  })
-
+})
 
 });
 
