@@ -99,6 +99,8 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
     @param {Object} data
   */
   setupData: function(data) {
+    console.log('ModelFragment - setupData', arguments);
+
     var store = get(this, 'store');
     var key = get(this, 'name');
     var type = store.modelFor(this.constructor);
@@ -109,12 +111,27 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
 
     // TODO: do normalization in the transform, not on the fly
     this._data = serializer.normalize(type, data, key);
+    console.log(key, type, serializer);
+    console.log(this._data, data);
 
     // Initiate state change
     this.send('pushedData');
 
     // Notify attribute properties/observers of internal change to `_data`
     this.notifyPropertyChange('data');
+  },
+
+  /**
+    Given a callback, iterates over each of the relationships in the model,
+    invoking the callback with the name of each relationship and its relationship
+    descriptor.
+
+    @method eachRelationship
+    @param {Function} callback the callback to invoke
+    @param {any} binding the value to which the callback's `this` should be bound
+  */
+  eachRelationship: function(callback, binding) {
+    this.constructor.eachRelationship(callback, binding);
   },
 
   /**

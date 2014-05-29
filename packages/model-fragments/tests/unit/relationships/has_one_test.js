@@ -10,7 +10,7 @@ module("unit/relationships - DS.belongsTo", {
     });
     Purchase = DS.ModelFragment.extend({
       quantity: DS.attr('number'),
-      product: DS.belongsTo('product')
+      product: DS.belongsTo('product', {async: true})
     });
     Product = DS.Model.extend({
       name: DS.attr('string'),
@@ -172,10 +172,10 @@ test("fragments pushed with belongsTo relationship to a model", function() {
 
         var purchase = purchases.objectAt(0);
         ok(purchase instanceof Purchase, "purchase record is an instance of `Purchase`");
-        
+
         var p = purchase.get('product');
-        ok(typeof p !== "number", "p record is not a number (id)");
-        ok(p instanceof Product, "p record is an instance of `Product`");
+        ok(typeof p !== "number", "purchase's product attribute is not a number (id)");
+        ok(p instanceof Product, "purchase's product attribute is an instance of `Product`");
 
         //equal(purchase.get('product'), product, "property of belongsTo is correct model record");
 
@@ -199,8 +199,53 @@ test("serializing creates a new Array with contents the result of serializing ea
 
   store.find(Transaction, 1).then(async(function(transaction) {
     var serialized = transaction.serialize();
-    console.log(serialized);
 
-    deepEqual(serialized, Ember.A(transactions).findBy('id', 1), "serializing returns array of each fragment serialized including belongsTo relationships");
+    var s = Ember.copy(Ember.A(transactions).findBy('id', 1));
+    delete s.id; // Remove ID because serialize does not include ID
+
+    deepEqual(serialized, s, "serializing returns array of each fragment serialized including belongsTo relationships");
   }));
+});
+
+
+test("serializing model with fragments and sub-model relationship", function() {
+
+  env.container.register('serializer:purchase', DS.JSONSerializer);
+  // TODO: this is necessary to set `typeKey` and prevent `store#serializerFor` from blowing up
+  store.modelFor('transaction');
+
+  var transaction = store.createRecord('transaction', {
+      purchases: []
+  });
+
+  var product = store.createRecord('product', {
+    id: 1,
+    name: "Milk",
+    price: 6.00
+  });
+
+  var purchase = store.createFragment('purchase', {
+      quantity: 1,
+      product: product
+  });
+
+  var length = transaction.get('purchases').get('length');
+
+  var purchases = transaction.get('purchases');
+  purchases.addFragment(purchase);
+
+  equal(purchases.get('length'), length + 1, "purchases property size is correct");
+  equal(purchases.indexOf(purchase), length, "new fragment is in correct location");
+
+  var serialized = transaction.serialize();
+
+  deepEqual(serialized, {
+    purchases: [
+      {
+        quantity: 1,
+        product: "1" // Record should be returned as an ID, IDs are strings.
+      }
+    ]
+  }, "serializing returns array of each fragment serialized including belongsTo relationships");
+
 });

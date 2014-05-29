@@ -122,6 +122,7 @@ var FragmentArray = StatefulArray.extend({
     @return {Array}
   */
   serialize: function() {
+    console.log('serialize FragmentArray');
     return this.invoke('serialize');
   },
 

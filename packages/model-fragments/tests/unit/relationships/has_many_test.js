@@ -11,7 +11,7 @@ module("unit/relationships - DS.hasMany", {
     });
     Team = DS.ModelFragment.extend({
       name: DS.attr('string'),
-      players: DS.belongsTo('player')
+      players: DS.hasMany('player', {async:true})
     });
     Player = DS.Model.extend({
       name: DS.attr('string')
@@ -105,7 +105,9 @@ test("fragments pushed with hasMany relationship to a model", function() {
         ok(team1 instanceof Team, "team1 record is an instance of `Team`");
 
         var ps = team1.get('players');
+        console.log(ps);
         var p = ps.objectAt(0);
+        console.log(p);
         ok(typeof p !== "number", "p record is not a number (id)");
         ok(p instanceof Player, "p record is an instance of `Player`");
 
@@ -133,6 +135,63 @@ test("serializing creates a new Array with contents the result of serializing ea
     var serialized = league.serialize();
     console.log(serialized);
 
-    deepEqual(serialized, Ember.A(leagues).findBy('id', 1), "serializing returns array of each fragment serialized including belongsTo relationships");
+    var s = Ember.A(leagues).findBy('id', 1);
+    delete s.id;
+
+    deepEqual(serialized, s, "serializing returns array of each fragment serialized including belongsTo relationships");
   }));
+});
+
+
+test("serializing model with fragments and sub-model relationships", function() {
+  pushPlayer(1);
+  pushPlayer(2);
+
+  env.container.register('serializer:team', DS.JSONSerializer);
+
+  // TODO: this is necessary to set `typeKey` and prevent `store#serializerFor` from blowing up
+  store.modelFor('league');
+
+  all([
+    store.find(Player, 1),
+    store.find(Player, 2)
+  ]).then(async(function(players) {
+    console.log(players);
+    var p1 = players[0];
+    var p2 = players[1];
+
+    var t1 = store.createFragment('team', {
+      name: "A Team"
+      //players: [p1,p2]
+    });
+    t1.set('players',[]);
+    
+    t1.get('players').pushObject(p1);
+
+    var t2 = store.createFragment('team',
+    {
+      name: "B Team",
+      players: [p2]
+    });
+    t2.get('players').pushObject(p2);
+
+    var league = store.createRecord('league', {
+      id: "1",
+      name: "AAA",
+      teams: [
+        t1,
+        t2
+      ]
+    });
+
+    var serialized = league.serialize();
+    console.log(serialized);
+
+    var s = Ember.A(leagues).findBy('id', 1);
+    delete s.id;
+
+    deepEqual(serialized, s, "serializing returns array of each fragment serialized including belongsTo relationships");
+
+  }));
+
 });

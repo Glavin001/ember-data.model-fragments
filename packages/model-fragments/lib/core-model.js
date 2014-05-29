@@ -4,6 +4,7 @@ import Model from './model';
 /**
   @module ember-data.model-fragments
 */
+var get = Ember.get;
 
 // Ember object prototypes are lazy-loaded
 Model.proto();
@@ -57,7 +58,86 @@ var CoreModel = Ember.Object.extend(protoProps, {
 });
 
 CoreModel.reopenClass(classProps, {
-  eachRelationship: Ember.K
+
+  /**
+    Given a callback, iterates over each of the relationships in the model,
+    invoking the callback with the name of each relationship and its relationship
+    descriptor.
+
+    @method eachRelationship
+    @static
+    @param {Function} callback the callback to invoke
+    @param {any} binding the value to which the callback's `this` should be bound
+  */
+  eachRelationship: function(callback, binding) {
+    console.log('eachRelationship', callback, binding);
+    //binding = binding || this;
+
+    get(this, 'relationshipsByName').forEach(function(name, relationship) {
+      console.log('name rel:', name, relationship);
+      callback.call(binding, name, relationship);
+    });
+  },
+
+  /**
+    A map whose keys are the relationships of a model and whose values are
+    relationship descriptors.
+
+    For example, given a model with this
+    definition:
+
+    ```javascript
+    App.Blog = DS.Model.extend({
+      users: DS.hasMany('user'),
+      owner: DS.belongsTo('user'),
+
+      posts: DS.hasMany('post')
+    });
+    ```
+
+    This property would contain the following:
+
+    ```javascript
+    var relationshipsByName = Ember.get(App.Blog, 'relationshipsByName');
+    relationshipsByName.get('users');
+    //=> { key: 'users', kind: 'hasMany', type: App.User }
+    relationshipsByName.get('owner');
+    //=> { key: 'owner', kind: 'belongsTo', type: App.User }
+    ```
+
+    @property relationshipsByName
+    @static
+    @type Ember.Map
+    @readOnly
+  */
+  relationshipsByName: Ember.computed(function() {
+    console.log('relationshipsByName');
+
+    var map = Ember.Map.create(), type;
+
+    this.eachComputedProperty(function(name, meta) {
+      if (meta.isRelationship) {
+        meta.key = name;
+        type = meta.type;
+
+        if (!type && meta.kind === 'hasMany') {
+          type = singularize(name);
+        } else if (!type) {
+          type = name;
+        }
+
+        if (typeof type === 'string') {
+          meta.type = this.store.modelFor(type);
+        }
+
+        map.set(name, meta);
+      }
+    });
+
+    return map;
+  })
+
+
 });
 
 export default CoreModel;
