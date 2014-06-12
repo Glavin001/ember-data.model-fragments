@@ -31,7 +31,17 @@ var protoProps = [
   'fragmentDidDirty',
   'fragmentDidReset',
   'rollbackFragments',
-  'proto'
+
+  'didDefineProperty',
+  'typeForRelationship',
+  'relationships',
+  'relationshipNames',
+  'relatedTypes',
+  'relationshipsByName',
+  'fields',
+  'eachRelationship',
+  'eachRelatedType'
+
 ].reduce(function(props, name) {
   props[name] = Model.prototype[name] || Ember.meta(Model.prototype).descs[name];
   return props;
@@ -41,7 +51,19 @@ var classProps = [
   'attributes',
   'eachAttribute',
   'transformedAttributes',
-  'eachTransformedAttribute'
+  'eachTransformedAttribute',
+
+ // https://github.com/emberjs/data/blob/master/packages/ember-data/lib/system/relationships/ext.js
+  // 'didDefineProperty',
+  // 'typeForRelationship',
+  // 'relationships',
+  // 'relationshipNames',
+  // 'relatedTypes',
+  // 'relationshipsByName',
+  // 'fields',
+  // 'eachRelationship',
+  // 'eachRelatedType'
+
 ].reduce(function(props, name) {
   props[name] = Model[name] || Ember.meta(Model).descs[name];
   return props;
@@ -53,8 +75,8 @@ var classProps = [
 
   @class CoreModel
 */
-var CoreModel = Ember.Object.extend(Ember.CoreObject.PrototypeMixin, Ember.CoreObject.ClassMixin, protoProps, {
-  eachRelationship: Ember.K,
+var CoreModel = Ember.Object.extend(Ember.CoreObject.PrototypeMixin, Ember.CoreObject.ClassMixin, Ember.Evented, protoProps, {
+  // eachRelationship: Ember.K,
   updateRecordArraysLater: Ember.K
 });
 
@@ -70,15 +92,15 @@ CoreModel.reopenClass(classProps, {
     @param {Function} callback the callback to invoke
     @param {any} binding the value to which the callback's `this` should be bound
   */
-  eachRelationship: function(callback, binding) {
-    console.log('eachRelationship', callback, binding);
-    //binding = binding || this;
-
-    get(this, 'relationshipsByName').forEach(function(name, relationship) {
-      console.log('name rel:', name, relationship);
-      callback.call(binding, name, relationship);
-    });
-  },
+  // eachRelationship: function(callback, binding) {
+  //   console.log('eachRelationship', callback, binding);
+  //   //binding = binding || this;
+  //
+  //   get(this, 'relationshipsByName').forEach(function(name, relationship) {
+  //     console.log('name rel:', name, relationship);
+  //     callback.call(binding, name, relationship);
+  //   });
+  // },
 
   /**
     A map whose keys are the relationships of a model and whose values are
@@ -111,32 +133,32 @@ CoreModel.reopenClass(classProps, {
     @type Ember.Map
     @readOnly
   */
-  relationshipsByName: Ember.computed(function() {
-    console.log('relationshipsByName');
-
-    var map = Ember.Map.create(), type;
-
-    this.eachComputedProperty(function(name, meta) {
-      if (meta.isRelationship) {
-        meta.key = name;
-        type = meta.type;
-
-        if (!type && meta.kind === 'hasMany') {
-          type = singularize(name);
-        } else if (!type) {
-          type = name;
-        }
-
-        if (typeof type === 'string') {
-          meta.type = this.store.modelFor(type);
-        }
-
-        map.set(name, meta);
-      }
-    });
-
-    return map;
-})
+//   relationshipsByName: Ember.computed(function() {
+//     console.log('relationshipsByName');
+//
+//     var map = Ember.Map.create(), type;
+//
+//     this.eachComputedProperty(function(name, meta) {
+//       if (meta.isRelationship) {
+//         meta.key = name;
+//         type = meta.type;
+//
+//         if (!type && meta.kind === 'hasMany') {
+//           type = singularize(name);
+//         } else if (!type) {
+//           type = name;
+//         }
+//
+//         if (typeof type === 'string') {
+//           meta.type = this.store.modelFor(type);
+//         }
+//
+//         map.set(name, meta);
+//       }
+//     });
+//
+//     return map;
+// })
 
 });
 

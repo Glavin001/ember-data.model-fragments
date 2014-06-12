@@ -101,6 +101,7 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
   setupData: function(data) {
     console.log('ModelFragment - setupData', arguments);
 
+
     var store = get(this, 'store');
     var key = get(this, 'name');
     var type = store.modelFor(this.constructor);
@@ -114,9 +115,12 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
     console.log(key, type, serializer);
     console.log(this._data, data);
 
+    console.log('CoreModel', this.eachRelationship);
+
     // Normalize Relationships
-    console.log(this._proto);
-    console.log('relationshipsByName', get(this, 'relationshipsByName'));
+    console.log('_proto', this._proto);
+    console.log('relationshipsByName', this.relationshipsByName);
+
 
     // Initiate state change
     this.send('pushedData');
@@ -134,9 +138,9 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
     @param {Function} callback the callback to invoke
     @param {any} binding the value to which the callback's `this` should be bound
   */
-  eachRelationship: function(callback, binding) {
-    this.constructor.eachRelationship(callback, binding);
-  },
+  // eachRelationship: function(callback, binding) {
+  //   this.constructor.eachRelationship(callback, binding);
+  // },
 
   /**
     Like `DS.Model#rollback`, if the fragment `isDirty` this function will
@@ -263,35 +267,35 @@ var ModelFragment = CoreModel.extend(Ember.Comparable, Ember.Copyable, {
       @type Ember.Map
       @readOnly
     */
-    relationshipsByName: Ember.computed(function() {
-      console.log('relationshipsByName');
-
-      var map = Ember.Map.create(), type;
-      console.log(this.eachComputedProperty);
-
-      this.eachComputedProperty(function(name, meta) {
-          console.log('eachComputedProperty', name, meta);
-
-        if (meta.isRelationship) {
-          meta.key = name;
-          type = meta.type;
-
-          if (!type && meta.kind === 'hasMany') {
-            type = singularize(name);
-          } else if (!type) {
-            type = name;
-          }
-
-          if (typeof type === 'string') {
-            meta.type = this.store.modelFor(type);
-          }
-
-          map.set(name, meta);
-        }
-      });
-
-      return map;
-    })
+    // relationshipsByName: Ember.computed(function() {
+    //   console.log('relationshipsByName');
+    //
+    //   var map = Ember.Map.create(), type;
+    //   console.log(this.eachComputedProperty);
+    //
+    //   this.eachComputedProperty(function(name, meta) {
+    //       console.log('eachComputedProperty', name, meta);
+    //
+    //     if (meta.isRelationship) {
+    //       meta.key = name;
+    //       type = meta.type;
+    //
+    //       if (!type && meta.kind === 'hasMany') {
+    //         type = singularize(name);
+    //       } else if (!type) {
+    //         type = name;
+    //       }
+    //
+    //       if (typeof type === 'string') {
+    //         meta.type = this.store.modelFor(type);
+    //       }
+    //
+    //       map.set(name, meta);
+    //     }
+    //   });
+    //
+    //   return map;
+    // })
 
 });
 
